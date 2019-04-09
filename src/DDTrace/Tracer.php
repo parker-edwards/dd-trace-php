@@ -327,12 +327,12 @@ final class Tracer implements TracerInterface
             $traceToBeSent = [];
 
             foreach ($trace as $span) {
-                if (!$span->isFinished()) {
+                if (!$span->duration !== null()) { // is span finished
                     if (!$autoFinishSpans) {
                         $traceToBeSent = null;
                         break;
                     }
-                    $span->finish();
+                    $span->duration = (Time::now()) - $this->startTime; // finish span
                 }
                 // Basic processing. We will do it in a more structured way in the future, but for now we just invoke
                 // the internal (hard-coded) processors programmatically.
@@ -345,7 +345,7 @@ final class Tracer implements TracerInterface
             }
 
             $tracesToBeSent[] = $traceToBeSent;
-            unset($this->traces[$traceToBeSent[0]['trace_id']]);
+            unset($this->traces[$traceToBeSent[0]['trace_id']]); //TODO check what is this ?
         }
 
         if (empty($tracesToBeSent)) {

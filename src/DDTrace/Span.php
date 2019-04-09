@@ -4,6 +4,8 @@ namespace DDTrace;
 
 use DDTrace\Integrations\Integration;
 use DDTrace\Contracts\Span as SpanInterface;
+use DDTrace\Data\Span as SpanData;
+
 use DDTrace\Contracts\SpanContext as SpanContextInterface;
 use DDTrace\Exceptions\InvalidSpanArgument;
 use DDTrace\Http\Urls;
@@ -11,108 +13,24 @@ use Exception;
 use InvalidArgumentException;
 use Throwable;
 
-final class Span implements SpanInterface
+final class Span extends SpanData implements SpanInterface
 {
-    /**
-     * Operation Name is the name of the operation being measured. Some examples
-     * might be "http.handler", "fileserver.upload" or "video.decompress".
-     * Name should be set on every span.
-     *
-     * @var string
-     */
-    private $operationName;
-
-    /**
-     * @var SpanContextInterface
-     */
-    private $context;
-
-    /**
-     * Resource is a query to a service. A web application might use
-     * resources like "/user/{user_id}". A sql database might use resources
-     * like "select * from user where id = ?".
-     *
-     * You can track thousands of resources (not millions or billions) so
-     * prefer normalized resources like "/user/{id}" to "/user/123".
-     *
-     * Resources should only be set on an app's top level spans.
-     *
-     * @var string
-     */
-    private $resource;
-
-    /**
-     * Service is the name of the process doing a particular job. Some
-     * examples might be "user-database" or "datadog-web-app". Services
-     * will be inherited from parents, so only set this in your app's
-     * top level span.
-     *
-     * @var string
-     */
-    private $service;
-
-    /**
-     * Protocol associated with the span
-     *
-     * @var string|null
-     */
-    private $type;
-
-    /**
-     * @var int
-     */
-    private $startTime;
-
-    /**
-     * @var int|null
-     */
-    private $duration;
-
-    /**
-     * @var array
-     */
-    private $tags = [];
-
-    /**
-     * @var array
-     */
-    private $metrics = [];
-
-    /**
-     * @var bool
-     */
-    private $hasError = false;
-
-    /**
-     * @var Integration
-     */
-    private $integration = null;
-
-    /**
-     * @var bool Whether or not this trace can be even considered for trace analytics automatic configuration.
-     */
-    private $isTraceAnalyticsCandidate = false;
-
     /**
      * Span constructor.
      * @param string $operationName
-     * @param SpanContextInterface $context
+     * @param SpanContextData $context
      * @param string $service
      * @param string $resource
      * @param int|null $startTime
      */
     public function __construct(
         $operationName,
-        SpanContextInterface $context,
+        SpanContextData $context,
         $service,
         $resource,
         $startTime = null
     ) {
-        $this->context = $context;
-        $this->operationName = (string)$operationName;
-        $this->service = (string)$service;
-        $this->resource = (string)$resource;
-        $this->startTime = $startTime ?: Time::now();
+        parent::__construct($operationName, $context, $service, $resource, $startTime);
     }
 
     /**
@@ -120,7 +38,7 @@ final class Span implements SpanInterface
      */
     public function getTraceId()
     {
-        return $this->context->getTraceId();
+        return $this->context->traceId;
     }
 
     /**
@@ -128,7 +46,7 @@ final class Span implements SpanInterface
      */
     public function getSpanId()
     {
-        return $this->context->getSpanId();
+        return $this->context->spanId;
     }
 
     /**
@@ -136,7 +54,7 @@ final class Span implements SpanInterface
      */
     public function getParentId()
     {
-        return $this->context->getParentId();
+        return $this->context->parentId;
     }
 
     /**
@@ -460,7 +378,7 @@ final class Span implements SpanInterface
      */
     public function getAllBaggageItems()
     {
-        return $this->context->getAllBaggageItems();
+        return $this->context->baggageItems;
     }
 
     /**
